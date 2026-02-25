@@ -1,0 +1,239 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Ubuntu服务器代理配置（v2rayN7 + xray + Docker代理 | 技术分享</title><meta name="author" content="jjking"><meta name="copyright" content="jjking"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Ubuntu 服务器代理配置（v2rayN7 + xray + Docker 代理）环境说明 系统版本：Ubuntu 22.04（纯命令行模式） 代理工具：v2rayN7（核心为 xray） 代理类型：SOCKS5（xray）→ HTTP（privoxy）（适配 Docker 拉取镜像场景）  一、v2rayN7（xray）部署1. 下载与解压软件下载链接：https:&#x2F;&#x2F;2c.allbluedo">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Ubuntu服务器代理配置（v2rayN7 + xray + Docker代理">
+<meta property="og:url" content="https://starblooming.github.io/2026/02/06/Ubuntu%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%BB%A3%E7%90%86%E9%85%8D%E7%BD%AE%EF%BC%88v2rayN7%20+%20xray%20+%20Docker%20%E4%BB%A3%E7%90%86%EF%BC%89/index.html">
+<meta property="og:site_name" content="技术分享">
+<meta property="og:description" content="Ubuntu 服务器代理配置（v2rayN7 + xray + Docker 代理）环境说明 系统版本：Ubuntu 22.04（纯命令行模式） 代理工具：v2rayN7（核心为 xray） 代理类型：SOCKS5（xray）→ HTTP（privoxy）（适配 Docker 拉取镜像场景）  一、v2rayN7（xray）部署1. 下载与解压软件下载链接：https:&#x2F;&#x2F;2c.allbluedo">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://starblooming.github.io/img/butterfly-icon.png">
+<meta property="article:published_time" content="2026-02-06T07:36:42.981Z">
+<meta property="article:modified_time" content="2026-02-06T07:47:43.908Z">
+<meta property="article:author" content="jjking">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://starblooming.github.io/img/butterfly-icon.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Ubuntu服务器代理配置（v2rayN7 + xray + Docker代理",
+  "url": "https://starblooming.github.io/2026/02/06/Ubuntu%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%BB%A3%E7%90%86%E9%85%8D%E7%BD%AE%EF%BC%88v2rayN7%20+%20xray%20+%20Docker%20%E4%BB%A3%E7%90%86%EF%BC%89/",
+  "image": "https://starblooming.github.io/img/butterfly-icon.png",
+  "datePublished": "2026-02-06T07:36:42.981Z",
+  "dateModified": "2026-02-06T07:47:43.908Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "jjking",
+      "url": "https://starblooming.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://starblooming.github.io/2026/02/06/Ubuntu%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%BB%A3%E7%90%86%E9%85%8D%E7%BD%AE%EF%BC%88v2rayN7%20+%20xray%20+%20Docker%20%E4%BB%A3%E7%90%86%EF%BC%89/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Ubuntu服务器代理配置（v2rayN7 + xray + Docker代理',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 7.3.0"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">技术分享</span></a><a class="nav-page-title" href="/"><span class="site-name">Ubuntu服务器代理配置（v2rayN7 + xray + Docker代理</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">Ubuntu服务器代理配置（v2rayN7 + xray + Docker代理</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-02-06T07:36:42.981Z" title="发表于 2026-02-06 15:36:42">2026-02-06</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-02-06T07:47:43.908Z" title="更新于 2026-02-06 15:47:43">2026-02-06</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="Ubuntu-服务器代理配置（v2rayN7-xray-Docker-代理）"><a href="#Ubuntu-服务器代理配置（v2rayN7-xray-Docker-代理）" class="headerlink" title="Ubuntu 服务器代理配置（v2rayN7 + xray + Docker 代理）"></a>Ubuntu 服务器代理配置（v2rayN7 + xray + Docker 代理）</h1><h2 id="环境说明"><a href="#环境说明" class="headerlink" title="环境说明"></a>环境说明</h2><ul>
+<li>系统版本：Ubuntu 22.04（纯命令行模式）</li>
+<li>代理工具：v2rayN7（核心为 xray）</li>
+<li>代理类型：SOCKS5（xray）→ HTTP（privoxy）（适配 Docker 拉取镜像场景）</li>
+</ul>
+<h2 id="一、v2rayN7（xray）部署"><a href="#一、v2rayN7（xray）部署" class="headerlink" title="一、v2rayN7（xray）部署"></a>一、v2rayN7（xray）部署</h2><h3 id="1-下载与解压"><a href="#1-下载与解压" class="headerlink" title="1. 下载与解压"></a>1. 下载与解压</h3><p>软件下载链接：<a target="_blank" rel="noopener" href="https://2c.allbluedocs01.com/tutorials/linux/v2rayN7/#%E5%90%AF%E5%8A%A8%E5%AE%A2%E6%88%B7%E7%AB%AF">https://2c.allbluedocs01.com/tutorials/linux/v2rayN7/#%E5%90%AF%E5%8A%A8%E5%AE%A2%E6%88%B7%E7%AB%AF</a></p>
+<p>下载 v2rayN7 Linux 版本后，在下载目录执行解压指令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> unzip v-linux-amd64.zip -d /opt/v2rayN7</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-权限配置"><a href="#2-权限配置" class="headerlink" title="2. 权限配置"></a>2. 权限配置</h3><p>修正目录所属权限（避免后续操作权限不足）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 切换目录所有者为当前用户（示例用户：zxc1）</span></span><br><span class="line"><span class="built_in">sudo</span> <span class="built_in">chown</span> -R zxc1:zxc1 /opt/v2rayN7</span><br><span class="line"><span class="comment"># 验证权限（输出应包含 zxc1 zxc1）</span></span><br><span class="line"><span class="built_in">ls</span> -ld /opt/v2rayN7</span><br></pre></td></tr></table></figure>
+
+<p>赋予 xray 可执行权限（需进入 v2rayN7 目录或指定完整路径）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">chmod</span> +x /opt/v2rayN7/xray</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-xray-配置文件编写"><a href="#3-xray-配置文件编写" class="headerlink" title="3. xray 配置文件编写"></a>3. xray 配置文件编写</h3><h4 id="（1）创建配置目录"><a href="#（1）创建配置目录" class="headerlink" title="（1）创建配置目录"></a>（1）创建配置目录</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> -p ~/.config/xray</span><br></pre></td></tr></table></figure>
+
+<h4 id="（2）编辑配置文件"><a href="#（2）编辑配置文件" class="headerlink" title="（2）编辑配置文件"></a>（2）编辑配置文件</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nano ~/.config/xray/config.json</span><br></pre></td></tr></table></figure>
+
+<p>粘贴以下内容（替换 <code>xxxx</code> 为本地 v2rayN7 节点详情中的实际信息）：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;inbounds&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;port&quot;</span><span class="punctuation">:</span> <span class="number">1080</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;listen&quot;</span><span class="punctuation">:</span> <span class="string">&quot;127.0.0.1&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;protocol&quot;</span><span class="punctuation">:</span> <span class="string">&quot;socks&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;settings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;auth&quot;</span><span class="punctuation">:</span> <span class="string">&quot;noauth&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;udp&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span><span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;outbounds&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;protocol&quot;</span><span class="punctuation">:</span> <span class="string">&quot;vless&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;settings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;vnext&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;address&quot;</span><span class="punctuation">:</span> <span class="string">&quot;替换为节点地址&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;port&quot;</span><span class="punctuation">:</span> 替换为节点端口（数字）<span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;users&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="punctuation">&#123;</span></span><br><span class="line">          <span class="attr">&quot;id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;替换为节点ID&quot;</span><span class="punctuation">,</span></span><br><span class="line">          <span class="attr">&quot;flow&quot;</span><span class="punctuation">:</span> <span class="string">&quot;替换为节点flow&quot;</span><span class="punctuation">,</span></span><br><span class="line">          <span class="attr">&quot;encryption&quot;</span><span class="punctuation">:</span> <span class="string">&quot;none&quot;</span>  </span><br><span class="line">        <span class="punctuation">&#125;</span><span class="punctuation">]</span></span><br><span class="line">      <span class="punctuation">&#125;</span><span class="punctuation">]</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;streamSettings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;network&quot;</span><span class="punctuation">:</span> <span class="string">&quot;tcp&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;security&quot;</span><span class="punctuation">:</span> <span class="string">&quot;reality&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;realitySettings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;serverName&quot;</span><span class="punctuation">:</span> <span class="string">&quot;替换为serverName&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;publicKey&quot;</span><span class="punctuation">:</span> <span class="string">&quot;替换为publicKey&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;shortId&quot;</span><span class="punctuation">:</span> <span class="string">&quot;替换为shortId&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;allowInsecure&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span></span><br><span class="line">      <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="4-xray-启动-停止-验证"><a href="#4-xray-启动-停止-验证" class="headerlink" title="4. xray 启动&#x2F;停止&#x2F;验证"></a>4. xray 启动&#x2F;停止&#x2F;验证</h3><h4 id="（1）启动方式"><a href="#（1）启动方式" class="headerlink" title="（1）启动方式"></a>（1）启动方式</h4><ul>
+<li>前台启动（调试用，关闭终端即停止）：</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/opt/v2rayN7/xray run -c ~/.config/xray/config.json</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>后台启动（持久化运行）：</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">nohup</span> /opt/v2rayN7/xray run -c ~/.config/xray/config.json &gt; xray.log 2&gt;&amp;1 </span><br></pre></td></tr></table></figure>
+
+<h4 id="（2）停止-xray"><a href="#（2）停止-xray" class="headerlink" title="（2）停止 xray"></a>（2）停止 xray</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">kill</span> -9 $(pgrep xray) 2&gt;/dev/null</span><br></pre></td></tr></table></figure>
+
+<h4 id="（3）验证启动状态"><a href="#（3）验证启动状态" class="headerlink" title="（3）验证启动状态"></a>（3）验证启动状态</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgrep xray  <span class="comment"># 输出进程ID则启动成功</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="二、终端代理配置（临时-当前用户）"><a href="#二、终端代理配置（临时-当前用户）" class="headerlink" title="二、终端代理配置（临时&#x2F;当前用户）"></a>二、终端代理配置（临时&#x2F;当前用户）</h2><h3 id="1-全局终端代理（适配-curl-wget-git-pip-等）"><a href="#1-全局终端代理（适配-curl-wget-git-pip-等）" class="headerlink" title="1. 全局终端代理（适配 curl&#x2F;wget&#x2F;git&#x2F;pip 等）"></a>1. 全局终端代理（适配 curl&#x2F;wget&#x2F;git&#x2F;pip 等）</h3><h4 id="（1）开启代理（仅当前终端生效）"><a href="#（1）开启代理（仅当前终端生效）" class="headerlink" title="（1）开启代理（仅当前终端生效）"></a>（1）开启代理（仅当前终端生效）</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 配置 SOCKS5 代理（指向 xray 的 1080 端口）</span></span><br><span class="line"><span class="built_in">export</span> ALL_PROXY=socks5://127.0.0.1:1080</span><br><span class="line"><span class="built_in">export</span> all_proxy=socks5://127.0.0.1:1080  <span class="comment"># 兼容小写参数工具</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="（2）关闭代理"><a href="#（2）关闭代理" class="headerlink" title="（2）关闭代理"></a>（2）关闭代理</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">unset</span> ALL_PROXY all_proxy</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-Git-代理配置"><a href="#2-Git-代理配置" class="headerlink" title="2. Git 代理配置"></a>2. Git 代理配置</h3><h4 id="（1）开启-Git-代理（仅当前终端生效）"><a href="#（1）开启-Git-代理（仅当前终端生效）" class="headerlink" title="（1）开启 Git 代理（仅当前终端生效）"></a>（1）开启 Git 代理（仅当前终端生效）</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git config --global http.proxy <span class="variable">$ALL_PROXY</span></span><br><span class="line">git config --global https.proxy <span class="variable">$ALL_PROXY</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="（2）取消-Git-代理"><a href="#（2）取消-Git-代理" class="headerlink" title="（2）取消 Git 代理"></a>（2）取消 Git 代理</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git config --global --<span class="built_in">unset</span> http.proxy</span><br><span class="line">git config --global --<span class="built_in">unset</span> https.proxy</span><br></pre></td></tr></table></figure>
+
+<h2 id="三、Docker-代理配置（全局生效）"><a href="#三、Docker-代理配置（全局生效）" class="headerlink" title="三、Docker 代理配置（全局生效）"></a>三、Docker 代理配置（全局生效）</h2><p>Docker Daemon 不直接支持 SOCKS5 代理，需通过 <code>privoxy</code> 将 SOCKS5 转为 HTTP 代理。</p>
+<h3 id="1-安装-privoxy（SOCKS5-→-HTTP-转换工具）"><a href="#1-安装-privoxy（SOCKS5-→-HTTP-转换工具）" class="headerlink" title="1. 安装 privoxy（SOCKS5 → HTTP 转换工具）"></a>1. 安装 privoxy（SOCKS5 → HTTP 转换工具）</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> apt update &amp;&amp; <span class="built_in">sudo</span> apt install -y privoxy</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-配置-privoxy"><a href="#2-配置-privoxy" class="headerlink" title="2. 配置 privoxy"></a>2. 配置 privoxy</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 编辑配置文件（vim 中按 G 跳转到最后一行）</span></span><br><span class="line"><span class="built_in">sudo</span> nano /etc/privoxy/config</span><br></pre></td></tr></table></figure>
+
+<p>在文件末尾添加：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">forward-socks5 / 127.0.0.1:1080 .</span><br></pre></td></tr></table></figure>
+
+<p>重启 privoxy 使配置生效：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl restart privoxy</span><br><span class="line"><span class="comment"># 验证启动状态（需显示 active(running)）</span></span><br><span class="line"><span class="built_in">sudo</span> systemctl status privoxy</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-Docker-代理配置"><a href="#3-Docker-代理配置" class="headerlink" title="3. Docker 代理配置"></a>3. Docker 代理配置</h3><h4 id="（1）添加用户到-docker-组（避免权限问题）"><a href="#（1）添加用户到-docker-组（避免权限问题）" class="headerlink" title="（1）添加用户到 docker 组（避免权限问题）"></a>（1）添加用户到 docker 组（避免权限问题）</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> usermod -aG docker zxc1</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>执行后需关闭当前终端，重新登录生效。</p>
+</blockquote>
+<h4 id="（2）用户级-Docker-代理配置（仅当前用户）"><a href="#（2）用户级-Docker-代理配置（仅当前用户）" class="headerlink" title="（2）用户级 Docker 代理配置（仅当前用户）"></a>（2）用户级 Docker 代理配置（仅当前用户）</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 创建 Docker 配置目录</span></span><br><span class="line"><span class="built_in">mkdir</span> -p ~/.docker</span><br><span class="line"></span><br><span class="line"><span class="comment"># 写入代理配置（指向 privoxy 的 8118 端口）</span></span><br><span class="line">nano ~/.docker/config.json</span><br></pre></td></tr></table></figure>
+
+<p>粘贴以下内容：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;proxies&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;default&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;httpProxy&quot;</span><span class="punctuation">:</span> <span class="string">&quot;http://127.0.0.1:8118&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;httpsProxy&quot;</span><span class="punctuation">:</span> <span class="string">&quot;http://127.0.0.1:8118&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;noProxy&quot;</span><span class="punctuation">:</span> <span class="string">&quot;localhost,127.0.0.1,192.168.0.0/16,172.17.0.0/16&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>修正配置文件权限：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">chown</span> zxc1:zxc1 ~/.docker/config.json</span><br><span class="line"><span class="built_in">chmod</span> 600 ~/.docker/config.json  <span class="comment"># 仅当前用户可读写</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="（3）系统级-Docker-代理配置（全局生效）"><a href="#（3）系统级-Docker-代理配置（全局生效）" class="headerlink" title="（3）系统级 Docker 代理配置（全局生效）"></a>（3）系统级 Docker 代理配置（全局生效）</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 创建 Docker 服务配置目录</span></span><br><span class="line"><span class="built_in">sudo</span> <span class="built_in">mkdir</span> -p /etc/systemd/system/docker.service.d</span><br><span class="line"></span><br><span class="line"><span class="comment"># 写入代理环境变量</span></span><br><span class="line"><span class="built_in">sudo</span> <span class="built_in">tee</span> /etc/systemd/system/docker.service.d/http-proxy.conf &lt;&lt; <span class="string">&#x27;EOF&#x27;</span></span><br><span class="line">[Service]</span><br><span class="line">Environment=<span class="string">&quot;HTTP_PROXY=http://127.0.0.1:8118&quot;</span></span><br><span class="line">Environment=<span class="string">&quot;HTTPS_PROXY=http://127.0.0.1:8118&quot;</span></span><br><span class="line">Environment=<span class="string">&quot;NO_PROXY=localhost,127.0.0.1,192.168.0.0/16,172.17.0.0/16&quot;</span></span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<h4 id="（4）重启-Docker-使配置生效"><a href="#（4）重启-Docker-使配置生效" class="headerlink" title="（4）重启 Docker 使配置生效"></a>（4）重启 Docker 使配置生效</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl daemon-reload</span><br><span class="line"><span class="built_in">sudo</span> systemctl restart docker</span><br><span class="line"></span><br><span class="line"><span class="comment"># 验证代理配置</span></span><br><span class="line">docker info | grep -i proxy</span><br><span class="line"><span class="comment"># 正常输出：</span></span><br><span class="line"><span class="comment"># Http Proxy: http://127.0.0.1:8118</span></span><br><span class="line"><span class="comment"># Https Proxy: http://127.0.0.1:8118</span></span><br><span class="line"><span class="comment"># No Proxy: localhost,127.0.0.1,192.168.0.0/16,172.17.0.0/16</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ol>
+<li>节点信息失效时，需重新修改 <code>~/.config/xray/config.json</code> 并重启 xray；</li>
+<li>若需全局终端代理（所有终端&#x2F;用户），需将 <code>export ALL_PROXY=...</code> 写入 <code>/etc/profile</code> 或 <code>~/.bashrc</code>；</li>
+<li>Docker 代理仅对拉取镜像生效，容器内流量需单独配置；</li>
+<li>所有涉及用户 <code>zxc1</code> 的指令，需替换为实际使用的服务器用户名。</li>
+</ol>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://starblooming.github.io">jjking</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://starblooming.github.io/2026/02/06/Ubuntu%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%BB%A3%E7%90%86%E9%85%8D%E7%BD%AE%EF%BC%88v2rayN7%20+%20xray%20+%20Docker%20%E4%BB%A3%E7%90%86%EF%BC%89/">https://starblooming.github.io/2026/02/06/Ubuntu%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%BB%A3%E7%90%86%E9%85%8D%E7%BD%AE%EF%BC%88v2rayN7%20+%20xray%20+%20Docker%20%E4%BB%A3%E7%90%86%EF%BC%89/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://starblooming.github.io" target="_blank">技术分享</a>！</span></div></div><div class="tag_share"><div class="post-share"><div class="social-share" data-image="/img/butterfly-icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/02/25/%E7%A4%BE%E5%AA%92%E8%87%AA%E5%8A%A8%E5%8C%96%E8%BF%90%E8%90%A5%E5%B9%B3%E5%8F%B0%E5%BB%BA%E8%AE%BE%E6%96%B9%E6%A1%88/" title="社媒自动化运营平台建设方案"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">社媒自动化运营平台建设方案</div></div><div class="info-2"><div class="info-item-1">社媒自动化运营平台建设方案建设阶段：一期（核心发布工作台）+ 二期（评论闭环扩展） 一、项目总览本方案旨在搭建一套轻量、稳定、可落地的社媒自动化运营平台，一期聚焦「多账号内容发布工作台」，解决账号矩阵管理、素材统一管理、定时批量发布、任务可追溯等核心痛点；二期基于一期能力，扩展评论采集与智能回复闭环，兼顾运营效率与平台合规性。 二、一期建设：可运营发布工作台（核心重点）2.1 核心目标 账号矩阵管理 支持多平台、多账号统一管理 账号采用独立Cookie隔离 账号登录状态失效可可视化展示   素材中心管理 素材与发布任务解耦，独立维护 支持视频、封面图及对应元数据管理   发布排期能力 支持立即发布、定时发布两种模式 支持批量选择账号，一键生成发布任务   任务运维管控 任务状态全流程流转：PENDING → RUNNING → SUCCESS/FAILED/NEED_LOGIN 支持失败任务重试、执行日志留存   系统稳定性保障 任务幂等设计，避免重复执行 账号环境完全隔离，防止串号风险 数据（数据库+文件）持久化存储，不丢失    2.2 核心技术实现2.2.1 整体架构 复用...</div></div></div></a><a class="pagination-related" href="/2026/02/04/Ubuntu%E6%9C%8D%E5%8A%A1%E5%99%A8%E8%AE%BE%E7%BD%AE%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F-frp-%E4%B8%8Efrp%E9%80%9A%E8%BF%87systemd%E8%AE%BE%E7%BD%AE%E8%87%AA%E5%90%AF/" title="Ubuntu服务器设置内网穿透-frp-与frp通过systemd设置自启"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">Ubuntu服务器设置内网穿透-frp-与frp通过systemd设置自启</div></div><div class="info-2"><div class="info-item-1">Ubuntu 服务器 FRP 内网穿透及 Systemd 自启设置（2026-02-04）一、FRP内网穿透核心原理内网穿透（NAT穿透）的核心是突破内网设备无法被公网直接访问的限制，让公网流量精准指向局域网内的指定设备&#x2F;服务。其应用场景覆盖个人开发、远程办公、家庭设备管控、中小企业运维等，不同场景均围绕“公网访问内网服务”的核心需求展开。 FRP的工作逻辑分为服务端与客户端两部分：  frps（服务端）：部署在具备公网IP的服务器上，监听指定端口并通过Token完成身份验证，作为流量中转节点； frpc（客户端）：运行在内网设备上，主动与frps建立TCP长连接； 公网用户访问frps的映射端口时，请求会通过长连接转发至frpc，再由frpc对接内网目标服务，最终实现公网到内网的双向数据交互，突破NAT限制。  FRP官方下载地址：https://github.com/fatedier/frp/releases 二、FRP基础部署步骤1. 目录创建与安装包解压首先创建FRP专属目录，避免文件混乱： 12mkdir -p /usr/local/frp  cd /usr/...</div></div></div></a></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/butterfly-icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">jjking</div><div class="author-info-description"></div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">3</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">1</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/starblooming"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Ubuntu-%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%BB%A3%E7%90%86%E9%85%8D%E7%BD%AE%EF%BC%88v2rayN7-xray-Docker-%E4%BB%A3%E7%90%86%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">Ubuntu 服务器代理配置（v2rayN7 + xray + Docker 代理）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8E%AF%E5%A2%83%E8%AF%B4%E6%98%8E"><span class="toc-number">1.1.</span> <span class="toc-text">环境说明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81v2rayN7%EF%BC%88xray%EF%BC%89%E9%83%A8%E7%BD%B2"><span class="toc-number">1.2.</span> <span class="toc-text">一、v2rayN7（xray）部署</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E4%B8%8B%E8%BD%BD%E4%B8%8E%E8%A7%A3%E5%8E%8B"><span class="toc-number">1.2.1.</span> <span class="toc-text">1. 下载与解压</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E6%9D%83%E9%99%90%E9%85%8D%E7%BD%AE"><span class="toc-number">1.2.2.</span> <span class="toc-text">2. 权限配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-xray-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E7%BC%96%E5%86%99"><span class="toc-number">1.2.3.</span> <span class="toc-text">3. xray 配置文件编写</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%EF%BC%881%EF%BC%89%E5%88%9B%E5%BB%BA%E9%85%8D%E7%BD%AE%E7%9B%AE%E5%BD%95"><span class="toc-number">1.2.3.1.</span> <span class="toc-text">（1）创建配置目录</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%EF%BC%882%EF%BC%89%E7%BC%96%E8%BE%91%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">1.2.3.2.</span> <span class="toc-text">（2）编辑配置文件</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-xray-%E5%90%AF%E5%8A%A8-%E5%81%9C%E6%AD%A2-%E9%AA%8C%E8%AF%81"><span class="toc-number">1.2.4.</span> <span class="toc-text">4. xray 启动&#x2F;停止&#x2F;验证</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%EF%BC%881%EF%BC%89%E5%90%AF%E5%8A%A8%E6%96%B9%E5%BC%8F"><span class="toc-number">1.2.4.1.</span> <span class="toc-text">（1）启动方式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%EF%BC%882%EF%BC%89%E5%81%9C%E6%AD%A2-xray"><span class="toc-number">1.2.4.2.</span> <span class="toc-text">（2）停止 xray</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%EF%BC%883%EF%BC%89%E9%AA%8C%E8%AF%81%E5%90%AF%E5%8A%A8%E7%8A%B6%E6%80%81"><span class="toc-number">1.2.4.3.</span> <span class="toc-text">（3）验证启动状态</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E7%BB%88%E7%AB%AF%E4%BB%A3%E7%90%86%E9%85%8D%E7%BD%AE%EF%BC%88%E4%B8%B4%E6%97%B6-%E5%BD%93%E5%89%8D%E7%94%A8%E6%88%B7%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">二、终端代理配置（临时&#x2F;当前用户）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%85%A8%E5%B1%80%E7%BB%88%E7%AB%AF%E4%BB%A3%E7%90%86%EF%BC%88%E9%80%82%E9%85%8D-curl-wget-git-pip-%E7%AD%89%EF%BC%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">1. 全局终端代理（适配 curl&#x2F;wget&#x2F;git&#x2F;pip 等）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%EF%BC%881%EF%BC%89%E5%BC%80%E5%90%AF%E4%BB%A3%E7%90%86%EF%BC%88%E4%BB%85%E5%BD%93%E5%89%8D%E7%BB%88%E7%AB%AF%E7%94%9F%E6%95%88%EF%BC%89"><span class="toc-number">1.3.1.1.</span> <span class="toc-text">（1）开启代理（仅当前终端生效）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%EF%BC%882%EF%BC%89%E5%85%B3%E9%97%AD%E4%BB%A3%E7%90%86"><span class="toc-number">1.3.1.2.</span> <span class="toc-text">（2）关闭代理</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Git-%E4%BB%A3%E7%90%86%E9%85%8D%E7%BD%AE"><span class="toc-number">1.3.2.</span> <span class="toc-text">2. Git 代理配置</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%EF%BC%881%EF%BC%89%E5%BC%80%E5%90%AF-Git-%E4%BB%A3%E7%90%86%EF%BC%88%E4%BB%85%E5%BD%93%E5%89%8D%E7%BB%88%E7%AB%AF%E7%94%9F%E6%95%88%EF%BC%89"><span class="toc-number">1.3.2.1.</span> <span class="toc-text">（1）开启 Git 代理（仅当前终端生效）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%EF%BC%882%EF%BC%89%E5%8F%96%E6%B6%88-Git-%E4%BB%A3%E7%90%86"><span class="toc-number">1.3.2.2.</span> <span class="toc-text">（2）取消 Git 代理</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81Docker-%E4%BB%A3%E7%90%86%E9%85%8D%E7%BD%AE%EF%BC%88%E5%85%A8%E5%B1%80%E7%94%9F%E6%95%88%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">三、Docker 代理配置（全局生效）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%AE%89%E8%A3%85-privoxy%EF%BC%88SOCKS5-%E2%86%92-HTTP-%E8%BD%AC%E6%8D%A2%E5%B7%A5%E5%85%B7%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">1. 安装 privoxy（SOCKS5 → HTTP 转换工具）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E9%85%8D%E7%BD%AE-privoxy"><span class="toc-number">1.4.2.</span> <span class="toc-text">2. 配置 privoxy</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Docker-%E4%BB%A3%E7%90%86%E9%85%8D%E7%BD%AE"><span class="toc-number">1.4.3.</span> <span class="toc-text">3. Docker 代理配置</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%EF%BC%881%EF%BC%89%E6%B7%BB%E5%8A%A0%E7%94%A8%E6%88%B7%E5%88%B0-docker-%E7%BB%84%EF%BC%88%E9%81%BF%E5%85%8D%E6%9D%83%E9%99%90%E9%97%AE%E9%A2%98%EF%BC%89"><span class="toc-number">1.4.3.1.</span> <span class="toc-text">（1）添加用户到 docker 组（避免权限问题）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%EF%BC%882%EF%BC%89%E7%94%A8%E6%88%B7%E7%BA%A7-Docker-%E4%BB%A3%E7%90%86%E9%85%8D%E7%BD%AE%EF%BC%88%E4%BB%85%E5%BD%93%E5%89%8D%E7%94%A8%E6%88%B7%EF%BC%89"><span class="toc-number">1.4.3.2.</span> <span class="toc-text">（2）用户级 Docker 代理配置（仅当前用户）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%EF%BC%883%EF%BC%89%E7%B3%BB%E7%BB%9F%E7%BA%A7-Docker-%E4%BB%A3%E7%90%86%E9%85%8D%E7%BD%AE%EF%BC%88%E5%85%A8%E5%B1%80%E7%94%9F%E6%95%88%EF%BC%89"><span class="toc-number">1.4.3.3.</span> <span class="toc-text">（3）系统级 Docker 代理配置（全局生效）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%EF%BC%884%EF%BC%89%E9%87%8D%E5%90%AF-Docker-%E4%BD%BF%E9%85%8D%E7%BD%AE%E7%94%9F%E6%95%88"><span class="toc-number">1.4.3.4.</span> <span class="toc-text">（4）重启 Docker 使配置生效</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="toc-number">1.5.</span> <span class="toc-text">注意事项</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/02/25/%E7%A4%BE%E5%AA%92%E8%87%AA%E5%8A%A8%E5%8C%96%E8%BF%90%E8%90%A5%E5%B9%B3%E5%8F%B0%E5%BB%BA%E8%AE%BE%E6%96%B9%E6%A1%88/" title="社媒自动化运营平台建设方案">社媒自动化运营平台建设方案</a><time datetime="2026-02-25T13:22:26.069Z" title="发表于 2026-02-25 21:22:26">2026-02-25</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/02/06/Ubuntu%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%BB%A3%E7%90%86%E9%85%8D%E7%BD%AE%EF%BC%88v2rayN7%20+%20xray%20+%20Docker%20%E4%BB%A3%E7%90%86%EF%BC%89/" title="Ubuntu服务器代理配置（v2rayN7 + xray + Docker代理">Ubuntu服务器代理配置（v2rayN7 + xray + Docker代理</a><time datetime="2026-02-06T07:36:42.981Z" title="发表于 2026-02-06 15:36:42">2026-02-06</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/02/04/Ubuntu%E6%9C%8D%E5%8A%A1%E5%99%A8%E8%AE%BE%E7%BD%AE%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F-frp-%E4%B8%8Efrp%E9%80%9A%E8%BF%87systemd%E8%AE%BE%E7%BD%AE%E8%87%AA%E5%90%AF/" title="Ubuntu服务器设置内网穿透-frp-与frp通过systemd设置自启">Ubuntu服务器设置内网穿透-frp-与frp通过systemd设置自启</a><time datetime="2026-02-04T13:13:58.000Z" title="发表于 2026-02-04 21:13:58">2026-02-04</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By jjking</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.4</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
